@@ -5,7 +5,7 @@ import os
 from visualisation import plot_clinic_network
 
 
-def trim_graph(G):
+def _trim_graph(G):
     """Trim nodes on graph (order < 2)"""
     L = G.copy()
     leaves = set()
@@ -17,14 +17,14 @@ def trim_graph(G):
     return L, len(leaves)
 
 
-def euclidean_distance(coord_tuple_1, coord_tuple_2):
+def _euclidean_distance(coord_tuple_1, coord_tuple_2):
     """Euclidean distance between two points"""
     x1, y1 = coord_tuple_1
     x2, y2 = coord_tuple_2
     return round(((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5, 4)
 
 
-def remove_close_order_1_nodes(G, threshold):
+def _remove_close_order_1_nodes(G, threshold):
     """Check order 1 nodes, and remove them if they are too close to another node"""
     L = G.copy()
     short_distance_leaves = set()
@@ -34,7 +34,7 @@ def remove_close_order_1_nodes(G, threshold):
             neighbor_nodes = L.neighbors(node)
             for neighbour in neighbor_nodes:
                 neighbour_coord_tuple = L.nodes[neighbour]['coords']
-                euc_distance = euclidean_distance(node_coord_tuple, neighbour_coord_tuple)
+                euc_distance = _euclidean_distance(node_coord_tuple, neighbour_coord_tuple)
                 if euc_distance < threshold:
                     short_distance_leaves.add(node)
 
@@ -44,7 +44,7 @@ def remove_close_order_1_nodes(G, threshold):
     return L, number_nodes_removed
 
 
-def find_single_close_node_pair(G, distance_threshold):
+def _find_single_close_node_pair(G, distance_threshold):
     """Find a single node pair that is close """
     contract_pair = None
     for node, data in G.nodes(data=True):
@@ -52,19 +52,19 @@ def find_single_close_node_pair(G, distance_threshold):
         neighbor_node_list = list(G.neighbors(node))
         for neighbor_node in neighbor_node_list:
             neighbour_coord_tuple = G.nodes[neighbor_node]['coords']
-            euc_distance = euclidean_distance(node_coord_tuple, neighbour_coord_tuple)
+            euc_distance = _euclidean_distance(node_coord_tuple, neighbour_coord_tuple)
             if euc_distance < distance_threshold:
                 contract_pair = tuple([node, neighbor_node])
 
     return contract_pair
 
 
-def contract_network_nodes(G, node_1, node_2):
+def _contract_network_nodes(G, node_1, node_2):
     """Function to merge nodes a single time"""
     return nx.contracted_nodes(G, node_1, node_2, self_loops=False)
 
 
-def remove_contract_attribute(G):
+def _remove_contract_attribute(G):
     """Function to delete contraction attributes from the graph"""
     attribute_name = 'contraction'
     for node, data in G.nodes(data=True):
@@ -74,47 +74,21 @@ def remove_contract_attribute(G):
     return G
 
 
-def contract_graph(G, threshold):
+def _contract_graph(G, threshold):
     """Identify close nodes in the clinic graph, and then contract them, returning a new graph"""
     L = G.copy()
     count = 0
-    contract_pair = find_single_close_node_pair(L, threshold)
+    contract_pair = _find_single_close_node_pair(L, threshold)
     while contract_pair is not None:
         node_1, node_2 = contract_pair
-        L = contract_network_nodes(L, node_1, node_2)
+        L = _contract_network_nodes(L, node_1, node_2)
         count += 1
-        contract_pair = find_single_close_node_pair(L, threshold)
+        contract_pair = _find_single_close_node_pair(L, threshold)
 
-    return remove_contract_attribute(L), count
-
-
-def run_trim_sequence(G, polygon_dict, plot_bool):
-
-    # Stage 1
-    trimmed_G, nodes_removed = trim_graph(G)
-    print(f"Stage 1 - remove order 1 nodes (with no distance criteria): {nodes_removed} nodes removed")
-    if plot_bool:
-        plot_clinic_network(trimmed_G, polygon_dict)
-
-    # Stage 2
-    number_nodes_removed = 1
-    while number_nodes_removed > 0:
-        trimmed_G, number_nodes_removed = remove_close_order_1_nodes(trimmed_G, threshold=1.5)
-        print(f"Stage 2 - remove order 1 nodes that are close/under threshold distance: {number_nodes_removed} nodes removed")
-        if plot_bool:
-            plot_clinic_network(trimmed_G, polygon_dict)
-
-    # Stage 3
-    contracted_G, number_nodes_contracted = contract_graph(trimmed_G, threshold=0.5)
-    print(f"Stage 3 - contract close node pairs in network: {number_nodes_contracted} node pairs contracted")
-
-    if plot_bool:
-        plot_clinic_network(contracted_G, polygon_dict)
-
-    return contracted_G
+    return _remove_contract_attribute(L), count
 
 
-def relabel_graph(G):
+def _relabel_graph(G):
     """Relabel graph based on number of nodes in each room, and update node tag attribute"""
     parent_room_dict, mapping_dict, node_tag_dict = {}, {}, {}
     for node, data in G.nodes(data=True):
@@ -140,8 +114,34 @@ def relabel_graph(G):
     return G
 
 
+def run_trim_sequence(G, polygon_dict, plot_bool):
+
+    # Stage 1
+    trimmed_G, nodes_removed = _trim_graph(G)
+    print(f"Stage 1 - remove order 1 nodes (with no distance criteria): {nodes_removed} nodes removed")
+    if plot_bool:
+        plot_clinic_network(trimmed_G, polygon_dict)
+
+    # Stage 2
+    number_nodes_removed = 1
+    while number_nodes_removed > 0:
+        trimmed_G, number_nodes_removed = _remove_close_order_1_nodes(trimmed_G, threshold=1.5)
+        print(f"Stage 2 - remove order 1 nodes that are close/under threshold distance: {number_nodes_removed} nodes removed")
+        if plot_bool:
+            plot_clinic_network(trimmed_G, polygon_dict)
+
+    # Stage 3
+    contracted_G, number_nodes_contracted = _contract_graph(trimmed_G, threshold=0.5)
+    print(f"Stage 3 - contract close node pairs in network: {number_nodes_contracted} node pairs contracted")
+
+    if plot_bool:
+        plot_clinic_network(contracted_G, polygon_dict)
+
+    return _relabel_graph(contracted_G)
+
+
 def save_graph(G, filename):
-    output_dir = "../output/"
+    output_dir = "output/"
     filepath = os.path.join(output_dir, filename)
     with open(filepath, 'wb') as handle:
         pickle.dump(G, handle)
