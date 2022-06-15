@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 from descartes import PolygonPatch
 import numpy as np
+import networkx as nx
 
 
 def plot_doorways_and_rooms(polygon_dict, doorway_dict):
@@ -116,4 +117,35 @@ def plot_building_line_segments(updated_room_segment_dict, connecting_segment_di
     plt.title("Straight skeletons cut into line segments")
     plt.xlabel('x position, m')
     plt.ylabel('y position, m')
+    plt.show()
+
+
+def plot_clinic_network(G, polygon_dict):
+    """Merge the graphs in the graph list"""
+    print(f"All rooms connected: {nx.is_connected(G)}")
+
+    G_pos = {node_key: data['coords'] for node_key, data in G.nodes(data=True)}
+
+    options = {
+        "pos": G_pos,
+        "font_size": 9,
+        "node_size": 200,
+        "node_color": 'white',
+        "edgecolors": "black",
+        "linewidths": 2,
+        "width": 1.5,
+        'edge_color': 'red',
+    }
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches(16, 10)
+
+    for name, polygon in polygon_dict.items():
+        patch = PolygonPatch(polygon.buffer(0), fc='none', linewidth=2)
+        ax.add_patch(patch)
+
+    nx.draw(G, **options, with_labels=False)
+    ax.axis('equal')
+    ax.margins(0.10)
+    plt.title('Network Representation of Building')
     plt.show()
