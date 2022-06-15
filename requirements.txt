@@ -1,0 +1,5 @@
+descartes==1.1.0
+matplotlib==3.5.2
+networkx==2.8.4
+numpy==1.22.4
+skgeom==0.1.2
