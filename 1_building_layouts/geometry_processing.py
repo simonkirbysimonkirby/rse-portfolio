@@ -3,8 +3,11 @@ import os
 import skgeom as sg
 import numpy as np
 
-from building_visualisation import plot_doorways_and_rooms, plot_building_skeletons, plot_building_line_segments
+from visualisation import plot_doorways_and_rooms, plot_building_skeletons, plot_building_line_segments, plot_clinic_network
 
+from graph_generation import create_building_network
+
+from graph_simplification import run_trim_sequence
 
 def load_pickle(filename):
     resource_dir = "../data/"
@@ -159,14 +162,16 @@ def find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_dic
     return room_segment_dict, connecting_segment_dict
 
 
-
 if __name__ == "__main__":
     polygon_dict = load_pickle("room_polygons.pickle")
     building_doorway_dict = load_pickle("building_doorways.pickle")
 
     doorway_location_dict = building_doorway_dict['doorway_location_dict']
     doorway_connection_dict = building_doorway_dict['doorway_info_dict']
+
     plot_doorways_and_rooms(polygon_dict, doorway_location_dict)
+
+    # Create straight skeletons of rooms and cut/connect them through doorways
 
     skeleton_dict = create_clinic_skeletons(polygon_dict)
     plot_building_skeletons(polygon_dict, skeleton_dict, doorway_location_dict)
@@ -181,5 +186,12 @@ if __name__ == "__main__":
                                polygon_dict,
                                doorway_location_dict)
 
+    # Create network from line segments
+    complex_G = create_building_network(updated_room_segment_dict, connecting_segment_dict)
+    plot_clinic_network(complex_G, polygon_dict)
 
+    # Simplify network
+    final_G = run_trim_sequence(complex_G, polygon_dict, plot_bool=True)
+
+    # Save network
 

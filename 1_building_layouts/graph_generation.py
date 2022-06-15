@@ -50,8 +50,6 @@ def _create_single_room_network(room_name, segment_list):
     map_room_attrs = {node: {'room': 'placeholder_room'} for node in room_node_coord_dict.keys()}
     node_tag_attrs = {node: {'node_tag': 'placeholder_node_tag'} for node in room_node_coord_dict.keys()}
     coords_attrs = {node: {'coords': coordinate_tuple} for node, coordinate_tuple in room_node_coord_dict.items()}
-    category_attrs = {node: {'category': 'placeholder_category'} for node in room_node_coord_dict.keys()}
-    active_attrs = {node: {'active': 'active'} for node in room_node_coord_dict.keys()}
 
     G = nx.Graph()
 
@@ -62,8 +60,6 @@ def _create_single_room_network(room_name, segment_list):
     nx.set_node_attributes(G, map_room_attrs)
     nx.set_node_attributes(G, node_tag_attrs)
     nx.set_node_attributes(G, coords_attrs)
-    nx.set_node_attributes(G, category_attrs)
-    nx.set_node_attributes(G, active_attrs)
 
     return G
 
