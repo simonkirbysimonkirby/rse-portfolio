@@ -114,7 +114,7 @@ def plot_building_line_segments(updated_room_segment_dict, connecting_segment_di
                     c=np.random.rand(3, ))
 
     ax.axis('equal')
-    plt.title("Straight skeletons cut into line segments")
+    plt.title("Straight skeletons of rooms cut into line segments")
     plt.xlabel('x position, m')
     plt.ylabel('y position, m')
     plt.show()
@@ -147,5 +147,5 @@ def plot_clinic_network(G, polygon_dict):
     nx.draw(G, **options, with_labels=False)
     ax.axis('equal')
     ax.margins(0.10)
-    plt.title('Network Representation of Building')
+    plt.title('Network representation of building')
     plt.show()
