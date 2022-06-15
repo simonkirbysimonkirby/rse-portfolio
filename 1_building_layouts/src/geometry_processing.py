@@ -3,10 +3,11 @@ import os
 import skgeom as sg
 import numpy as np
 
-from visualisation import plot_building_skeletons, plot_building_line_segments
+from visualisation import _plot_building_skeletons, _plot_building_line_segments
+
 
 def load_pickle(filename):
-    resource_dir = "../data/"
+    resource_dir = "data/"
     filepath = os.path.join(resource_dir, filename)
     with open(filepath, 'rb') as handle:
         return pickle.load(handle)
@@ -41,12 +42,12 @@ def _create_single_room_skeletons(room_polygon):
     return sg.skeleton.create_interior_straight_skeleton(final_poly)
 
 
-def create_clinic_skeletons(polygon_dict):
+def _create_clinic_skeletons(polygon_dict):
 
     return {room_name: _create_single_room_skeletons(polygon) for room_name, polygon in polygon_dict.items()}
 
 
-def create_skeleton_line_dict(skeleton_dict):
+def _create_skeleton_line_dict(skeleton_dict):
     """Convert skeleton dict to line dict"""
     room_segment_dict = {}
     for room_name, skeleton in skeleton_dict.items():
@@ -128,7 +129,7 @@ def _find_room_intersection_point(room_segment_list, intersection_segment, skgeo
     return updated_room_segment_list, cut_point
 
 
-def find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_dict):
+def _find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_dict):
     """For each doorway, find midpoint, project ray out and find the intersection with the room segments"""
     connecting_segment_dict = {}
     for room_name, doorway_coords in doorway_dict.items():
@@ -160,19 +161,19 @@ def find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_dic
 
 def create_line_segments_from_polygons(polygon_dict, doorway_location_dict, doorway_connection_dict, plot_bool):
 
-    skeleton_dict = create_clinic_skeletons(polygon_dict)
+    skeleton_dict = _create_clinic_skeletons(polygon_dict)
     if plot_bool:
-        plot_building_skeletons(polygon_dict, skeleton_dict, doorway_location_dict)
+        _plot_building_skeletons(polygon_dict, skeleton_dict, doorway_location_dict)
 
-    room_segment_dict = create_skeleton_line_dict(skeleton_dict)
-    updated_room_segment_dict, connecting_segment_dict = find_doorway_intersections(room_segment_dict,
-                                                                                    doorway_location_dict,
-                                                                                    doorway_connection_dict)
+    room_segment_dict = _create_skeleton_line_dict(skeleton_dict)
+    updated_room_segment_dict, connecting_segment_dict = _find_doorway_intersections(room_segment_dict,
+                                                                                     doorway_location_dict,
+                                                                                     doorway_connection_dict)
 
     if plot_bool:
-        plot_building_line_segments(updated_room_segment_dict,
-                                    connecting_segment_dict,
-                                    polygon_dict,
-                                    doorway_location_dict)
+        _plot_building_line_segments(updated_room_segment_dict,
+                                     connecting_segment_dict,
+                                     polygon_dict,
+                                     doorway_location_dict)
 
     return updated_room_segment_dict, connecting_segment_dict
