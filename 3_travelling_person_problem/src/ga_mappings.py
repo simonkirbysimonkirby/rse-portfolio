@@ -44,3 +44,16 @@ def create_distance_matrix(G):
 
     return distance_matrix, room_list
 
+
+def create_mapping(room_list):
+
+    assert len(room_list) <= 26, "Too many rooms for a simple mapping"
+
+    map_dict = {}
+    for idx, room in enumerate(room_list):
+        start = ord('a')
+        room_label = chr(start + idx)
+        map_dict[idx] = room_label
+
+    return map_dict
+
