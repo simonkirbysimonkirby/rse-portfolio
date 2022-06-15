@@ -1,4 +1,6 @@
 import networkx as nx
+import pickle
+import os
 
 from visualisation import plot_clinic_network
 
@@ -136,3 +138,10 @@ def relabel_graph(G):
     nx.set_node_attributes(G, node_tag_dict)
 
     return G
+
+
+def save_graph(G, filename):
+    output_dir = "../output/"
+    filepath = os.path.join(output_dir, filename)
+    with open(filepath, 'wb') as handle:
+        pickle.dump(G, handle)
