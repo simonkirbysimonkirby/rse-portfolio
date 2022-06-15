@@ -3,6 +3,7 @@ from visualisation import plot_doorways_and_rooms, plot_clinic_network
 from graph_generation import create_building_network
 from graph_simplification import run_trim_sequence, save_graph
 
+
 def main():
     # Load data
     polygon_dict = load_pickle("room_polygons.pickle")
