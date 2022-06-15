@@ -135,7 +135,7 @@ def run_trim_sequence(G, polygon_dict, plot_bool):
     print(f"Stage 3 - contract close node pairs in network: {number_nodes_contracted} node pairs contracted")
 
     if plot_bool:
-        plot_clinic_network(contracted_G, polygon_dict, True, 'output_6_image_of')
+        plot_clinic_network(contracted_G, polygon_dict, True, 'output_6_image_of_final')
 
     return contracted_G
 
