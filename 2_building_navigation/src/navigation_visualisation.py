@@ -55,5 +55,5 @@ def visualise_shortest_path(G, polygon_dict, shortest_path, shortest_path_length
         patch = mpatches.Patch(color=color, label=label)
         handles.append(patch)
 
-    plt.legend(handles=handles, frameon=False, ncol=3, labelspacing=1, loc="lower center")
+    plt.legend(handles=handles, frameon=False, ncol=2, labelspacing=1, loc="lower center")
     plt.show()
