@@ -7,6 +7,15 @@ from visualisation import _plot_building_skeletons, _plot_building_line_segments
 
 
 def load_pickle(filename):
+    """Loads a pickled input file found in the input data folder.
+
+    Args:
+        filename (string): filename of pickled input file
+
+    Returns:
+        pickle.load(handle) (dict): the un-pickled file
+    """
+
     resource_dir = "data/"
     filepath = os.path.join(resource_dir, filename)
     with open(filepath, 'rb') as handle:
@@ -14,6 +23,16 @@ def load_pickle(filename):
 
 
 def _create_single_room_skeletons(room_polygon):
+    """Function to create a straight skeleton of a single room from its polygon. Requires a bit of wrangling to convert
+    between polygon types, ensure which rings are selected, etc. More information on straight skeletons can be found
+    here: https://en.wikipedia.org/wiki/Straight_skeleton.
+
+    Args:
+        room_polygon (Shapely polygon): a Shapely polygon constructed from the room coordinates
+
+    Returns:
+        sg.skeleton.create_interior_straight_skeleton(final_poly) (skgeom skeleton object): the straight skeleton
+    """
 
     # Exterior outline
     exterior_x, exterior_y = room_polygon.exterior.coords.xy
@@ -43,12 +62,28 @@ def _create_single_room_skeletons(room_polygon):
 
 
 def _create_clinic_skeletons(polygon_dict):
+    """Creates a straight skeleton for each room polygon, and stores them in a dictionary.
+
+    Args:
+        polygon_dict (dict): dictionary of all polygons for rooms in building
+
+    Returns:
+        dict (str: skgeom straight skeleton object): dictionary containing all straight skeletons for building
+    """
 
     return {room_name: _create_single_room_skeletons(polygon) for room_name, polygon in polygon_dict.items()}
 
 
 def _create_skeleton_line_dict(skeleton_dict):
-    """Convert skeleton dict to line dict"""
+    """Converts every straight skeleton object for each room into a manageable set of line segments.
+
+    Args:
+        skeleton_dict (dict): dictionary of all straight skeletons for each room in the building
+
+    Returns:
+        room_segment_dict (str: list): dictionary of line segments for each room
+    """
+
     room_segment_dict = {}
     for room_name, skeleton in skeleton_dict.items():
         room_segments = []
@@ -66,7 +101,18 @@ def _create_skeleton_line_dict(skeleton_dict):
 
 
 def _create_intersection_segment(doorway_coords):
-    """Create perpendicular intersection segment/connection path through centre of door, using doorway coordinates"""
+    """Creates perpendicular intersection segment, by projecting a line through a vector orthogonal to the doorway.
+    This will be used to find the intersection points with the straight skeletons. We will project along this line in
+    the positive and negative directions respectively.
+
+    Args:
+        doorway_coords (tuple): coordinates of a doorway (we will create intersection segments at 90 degrees to this)
+
+    Returns:
+        intersection_segment (skgeom line segment): intersection line segment
+        skgeom_doorway_midpoint (skgeom point): midpoint of doorway
+    """
+
     doorway_p1 = sg.Point2(doorway_coords[0][0], doorway_coords[0][1])
     doorway_p2 = sg.Point2(doorway_coords[1][0], doorway_coords[1][1])
 
@@ -89,8 +135,23 @@ def _create_intersection_segment(doorway_coords):
 
 
 def _find_room_intersection_point(room_segment_list, intersection_segment, skgeom_doorway_midpoint):
-    """Helper function: Given an intersection segment and a room/room segment list, returns a cut room segment list,
-    and the intersection point"""
+    """Uses an intersection segment to find the intersection point with a specified room. At the intersection point,
+    the room segments are cut, and an updated set of cut segments are created.
+
+    The intersection segment might return multiple intersections with a set of room line segments. All points are
+    recorded, and the closest one is selected as the connecting point. This cut point defines two new cut room segments
+    and one end of an intersection segment. Untouched lines remain untouched. Care is taken to ensure that overlaps
+    are not created.
+
+    Args:
+        room_segment_list (list): list of line segments for a single room
+        intersection_segment (skgeom line segment): an arbitrarily long line segment orthogonal to a doorway
+        skgeom_doorway_midpoint (skgeom point object): the midpoint of a doorway
+
+    Returns:
+        updated_room_segment_list (list): a new set of cut room segments, cut at the cut point, with no overlaps.
+        cut_point (skgeom point object): point at which the intersection segment cuts the room line segment (min distance)
+    """
 
     # Find the intersections between the intersection segment and the room geometry, storing everything
 
@@ -130,7 +191,19 @@ def _find_room_intersection_point(room_segment_list, intersection_segment, skgeo
 
 
 def _find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_dict):
-    """For each doorway, find midpoint, project ray out and find the intersection with the room segments"""
+    """Runs the intersection process for each doorway, connecting the two rooms either side of each one. Creates the
+    connecting segments, and stores these.
+
+    Args:
+        room_segment_dict (dict): dictionary of line segments for each room
+        doorway_dict (dict): contains doorway coordinates (two points per doorway)
+        doorway_info_dict (dict): contains doorway metadata, including the parent and connecting rooms for each doorway
+
+    Returns:
+        room_segment_dict (dict): updated room segment lists in a dictionary
+        connecting_segment_dict (dict): dictionary of intersection segments trimmed on both sides at two cut points
+    """
+
     connecting_segment_dict = {}
     for room_name, doorway_coords in doorway_dict.items():
         room_segment_list = room_segment_dict[room_name]
@@ -160,6 +233,18 @@ def _find_doorway_intersections(room_segment_dict, doorway_dict, doorway_info_di
 
 
 def create_line_segments_from_polygons(polygon_dict, doorway_location_dict, doorway_connection_dict, plot_bool):
+    """Function that runs the whole geometry processing routine, and controls plotting/visualisations.
+
+    Args:
+        polygon_dict (dict): dictionary containing room polygons
+        doorway_location_dict (dict): dictionary containing coordinate information of doorways
+        doorway_connection_dict (dict): dictionary containing metadata about each doorway
+        plot_bool (bool): if True, plots a visualisation of line segments
+
+    Returns:
+        room_segment_dict (dict): updated room segment lists in a dictionary
+        connecting_segment_dict (dict): dictionary of intersection segments trimmed on both sides at two cut points
+    """
 
     skeleton_dict = _create_clinic_skeletons(polygon_dict)
     if plot_bool:
