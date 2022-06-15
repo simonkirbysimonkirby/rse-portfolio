@@ -35,6 +35,7 @@ def plot_doorways_and_rooms(polygon_dict, doorway_dict):
     plt.title("Building layout: rooms and doorways")
     plt.xlabel('x position, m')
     plt.ylabel('y position, m')
+    plt.savefig('output/output_1_building_and_doorways.png')
     plt.show()
 
 
@@ -73,6 +74,7 @@ def _plot_building_skeletons(polygon_dict, skeleton_dict, doorway_dict):
 
     ax.axis('equal')
     plt.title("Straight skeletons of each room in building")
+    plt.savefig('output/output_2_straight_skeletons_of_rooms.png')
     plt.show()
 
 
@@ -117,10 +119,11 @@ def _plot_building_line_segments(updated_room_segment_dict, connecting_segment_d
     plt.title("Straight skeletons of rooms cut into line segments")
     plt.xlabel('x position, m')
     plt.ylabel('y position, m')
+    plt.savefig('output/output_3_line_segments.png')
     plt.show()
 
 
-def plot_clinic_network(G, polygon_dict):
+def plot_clinic_network(G, polygon_dict, save_bool, output_name):
     """Merge the graphs in the graph list"""
     print(f"All rooms connected: {nx.is_connected(G)}")
 
@@ -148,4 +151,6 @@ def plot_clinic_network(G, polygon_dict):
     ax.axis('equal')
     ax.margins(0.10)
     plt.title('Network representation of building')
+    if save_bool:
+        plt.savefig(f"output/{output_name}_building_network.png")
     plt.show()

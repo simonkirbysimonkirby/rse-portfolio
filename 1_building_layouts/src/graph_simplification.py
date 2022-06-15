@@ -120,7 +120,7 @@ def run_trim_sequence(G, polygon_dict, plot_bool):
     trimmed_G, nodes_removed = _trim_graph(G)
     print(f"Stage 1 - remove order 1 nodes (with no distance criteria): {nodes_removed} nodes removed")
     if plot_bool:
-        plot_clinic_network(trimmed_G, polygon_dict)
+        plot_clinic_network(trimmed_G, polygon_dict, True, 'output_5_trimmed')
 
     # Stage 2
     number_nodes_removed = 1
@@ -128,14 +128,14 @@ def run_trim_sequence(G, polygon_dict, plot_bool):
         trimmed_G, number_nodes_removed = _remove_close_order_1_nodes(trimmed_G, threshold=1.5)
         print(f"Stage 2 - remove order 1 nodes that are close/under threshold distance: {number_nodes_removed} nodes removed")
         if plot_bool:
-            plot_clinic_network(trimmed_G, polygon_dict)
+            plot_clinic_network(trimmed_G, polygon_dict, False, '')
 
     # Stage 3
     contracted_G, number_nodes_contracted = _contract_graph(trimmed_G, threshold=0.5)
     print(f"Stage 3 - contract close node pairs in network: {number_nodes_contracted} node pairs contracted")
 
     if plot_bool:
-        plot_clinic_network(contracted_G, polygon_dict)
+        plot_clinic_network(contracted_G, polygon_dict, True, 'output_6_image_of')
 
     return contracted_G
 
