@@ -137,7 +137,25 @@ def run_trim_sequence(G, polygon_dict, plot_bool):
     if plot_bool:
         plot_clinic_network(contracted_G, polygon_dict)
 
-    return _relabel_graph(contracted_G)
+    return contracted_G
+
+
+def _set_edge_weights_to_euc_distances(G):
+
+    for node_1, node_2, data in G.edges(data=True):
+        node_tuple_1 = G.nodes[node_1]['coords']
+        node_tuple_2 = G.nodes[node_2]['coords']
+        edge_length = _euclidean_distance(node_tuple_1, node_tuple_2)
+        data['weight'] += edge_length
+
+    return G
+
+
+def final_graph_processing(G):
+
+    relabelled_G = _relabel_graph(G)
+
+    return _set_edge_weights_to_euc_distances(relabelled_G)
 
 
 def save_graph(G, filename):
