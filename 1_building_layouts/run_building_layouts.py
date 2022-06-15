@@ -1,7 +1,7 @@
 from geometry_processing import load_pickle, create_line_segments_from_polygons
 from visualisation import plot_doorways_and_rooms, plot_clinic_network
 from graph_generation import create_building_network
-from graph_simplification import run_trim_sequence, save_graph
+from graph_simplification import run_trim_sequence, final_graph_processing, save_graph
 
 
 def main():
@@ -22,7 +22,10 @@ def main():
     plot_clinic_network(complex_G, polygon_dict)
 
     # Simplify network using a three-stage routine
-    final_G = run_trim_sequence(complex_G, polygon_dict, plot_bool=True)
+    simplified_G = run_trim_sequence(complex_G, polygon_dict, plot_bool=True)
+
+    # Relabel and set final edge weights of graph to Euclidean distances
+    final_G = final_graph_processing(simplified_G)
 
     # Save final simplified and relabelled network
     save_graph(final_G, "final_building_network.pickle")
