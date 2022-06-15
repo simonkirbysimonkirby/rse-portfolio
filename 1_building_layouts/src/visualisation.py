@@ -38,7 +38,7 @@ def plot_doorways_and_rooms(polygon_dict, doorway_dict):
     plt.show()
 
 
-def plot_building_skeletons(polygon_dict, skeleton_dict, doorway_dict):
+def _plot_building_skeletons(polygon_dict, skeleton_dict, doorway_dict):
 
     fig, ax = plt.subplots()
     fig.set_size_inches(16, 10)
@@ -76,7 +76,7 @@ def plot_building_skeletons(polygon_dict, skeleton_dict, doorway_dict):
     plt.show()
 
 
-def plot_building_line_segments(updated_room_segment_dict, connecting_segment_dict, polygon_dict, doorway_dict):
+def _plot_building_line_segments(updated_room_segment_dict, connecting_segment_dict, polygon_dict, doorway_dict):
     fig, ax = plt.subplots()
     fig.set_size_inches(18, 10)
 
