@@ -53,6 +53,14 @@ about which pairs of rooms are connected via which doorways.
   
 **Outputs**:
 
+* `output_1`: image of building rooms and doorway locations
+* `output_2`: image of straight skeletons produced for each room
+* `output_3`: image of cut line segments, and connecting line segments
+* `output_4`: image of an untrimmed, complex network representation of the building
+* `output_5`: image of a trimmed building network
+* `output_6`: image of the final building network, with a 3-stage trim sequence applied
+* `output_7`: the final network of the building, pickled
+
 ### How to run
 
 Please run the file `run_building_layouts.py`.
@@ -81,6 +89,7 @@ Please run the file `run_building_navigation.py`.
 about which pairs of rooms are connected via which doorways.
   
 **Outputs**:
+
 
 
 
