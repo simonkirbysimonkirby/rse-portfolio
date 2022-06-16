@@ -84,7 +84,7 @@ Please run the file `run_building_navigation.py`. Run this multiple times to gen
 
 **Inputs**:
 * `room_polygons.pickle`: a pickled dictionary of polygons, each representing a room in a building.
-* ` building_doorways.pickle`: a pickled dictionary of doorway coordinates and metadata, in particular, information 
+* `building_doorways.pickle`: a pickled dictionary of doorway coordinates and metadata, in particular, information 
 about which pairs of rooms are connected via which doorways.
   
 **Outputs**:
@@ -95,25 +95,28 @@ about which pairs of rooms are connected via which doorways.
 
 ### Introduction
 
-The third app takes the building graph produced in app 1, and the shortest path routing abilities shown in app 2, and optimises a travelling salesperson problem (i.e. what is the shortest distance a person visitng n rooms can take, visiting each room once). This app has been written in a class-based style, simplifying the user entry point significantly. 
+The third app takes the building graph produced in app 1, and the shortest path routing abilities shown in app 2, and optimises a travelling salesperson problem (i.e. what is the shortest distance a person visitng n rooms can take, visiting each room in a required route once). This app has been written in a class-based style, simplifying the user entry point significantly. 
 
 The following routine is performed:
-* A distance matrix between every room and every other room is created.
+* A distance matrix between every room and every other room is created, using the shortest path algorithm shown in app 2.
+* A route length is specified (i.e. 20 different rooms must be visited).
+* A genetic algorithm is initialised using the parameteres given.
+* A genetic algorithm is used to find the sequence of rooms visited to minimise the distance travelled overall.
+* Ordered crossover (Davis) is used to generate children, and mutation is used to try to avoid local minima.
+* The outputs are processed, a figure saved, and some information printed to the console.
 
 ### How to run
 
-Please run the file `run_building_navigation.py`. Run this multiple times to generate different routes!
+Please run the file `run_travelling_person_problem.py`. Change the GA inputs to adjust the optimisation.
 
 ### Input & Outputs
 
 **Inputs**:
-* `room_polygons.pickle`: a pickled dictionary of polygons, each representing a room in a building.
-* ` building_doorways.pickle`: a pickled dictionary of doorway coordinates and metadata, in particular, information 
-about which pairs of rooms are connected via which doorways.
+* `final_building_network.pickle`: final network of building, used to create a distance matrix of shortest paths
   
 **Outputs**:
 
-* `output_1`: image of shortest path between two nodes
+* `output_1`: image of the reduction in distance travelled across epochs
 
 
 
