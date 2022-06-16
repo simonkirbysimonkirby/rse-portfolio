@@ -8,9 +8,8 @@ of geometric primitives, to the creation of engaging visualisations. Please enjo
 
 # Dependencies
 
-Dependencies for the project can be found in `requirements.txt`. These can be installed in a virtual environment in 
-the standard way. Most dependencies should be familiar: all visualisations have been created using `matplotlib`, some
-arithmetic has been completed with `numpy`, and network creation has been handled with `networkx`.
+Dependencies for the project can be found in `requirements.txt`. This was generated using `pipreqs`, so might be too abridged for some users. These can be installed in a virtual environment in the standard way. Most dependencies should be familiar: all visualisations have been created using `matplotlib`, some
+arithmetic has been completed with `numpy`, some polygon manipulation with `shapely`, and network creation has been handled with `networkx`.
 
 Two dependencies should be highlighted:
 * `descartes`: extends the `matplotlib` patch functionality, which is incredibly useful when plotting room polygons.
