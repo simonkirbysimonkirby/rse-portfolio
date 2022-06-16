@@ -1,197 +1,166 @@
 import random
 import numpy as np
-import matplotlib.pyplot as plt
+import operator
 
+from ga_mappings import reverse_room_mapping
 
-def _make_route(map_dict, route_length):
+from tsp_visualisation import visualise_fitness
 
-    possible_rooms = list(map_dict.keys())
-    route_rooms = possible_rooms[:route_length]
-    route = random.sample(route_rooms, route_length-1)
-    route.append(route[0])
 
-    return route
+class GeneticAlgorithm:
 
+    def __init__(self, route_length, epochs, population_size, elite_number, mutation_rate, map_dict):
 
-def create_initial_population(population_size, route_length, map_dict):
+        self.epochs = epochs
+        self.population_size = population_size
+        self.elite_number = elite_number
+        self.mutation_rate = mutation_rate
+        self.min_distances = []
+        self.min_individuals = []
+        self.population = [self._create_route(route_length, map_dict) for _ in range(0, self.population_size)]
 
-    return [_make_route(map_dict, route_length) for _ in range(0, population_size)]
+    def _create_route(self, route_length, map_dict):
+        possible_rooms = list(map_dict.keys())
+        route_rooms = possible_rooms[:route_length]
+        route = random.sample(route_rooms, route_length - 1)
+        route.append(route[0])
 
+        return route
 
-def _calculate_individual_fitness(individual, distance_matrix):
+    def _calculate_individual_fitness(self, individual, distance_matrix):
+        total_distance = 0
+        for idx, label in enumerate(individual[:-1]):
+            matrix_index_i = ord(label) - ord('a')
+            matrix_index_j = ord(individual[idx + 1]) - ord('a')
+            total_distance += distance_matrix[matrix_index_i][matrix_index_j]
 
-    total_distance = 0
-    for idx, label in enumerate(individual[:-1]):
-        matrix_index_i = ord(label) - ord('a')
-        matrix_index_j = ord(individual[idx+1]) - ord('a')
-        total_distance += distance_matrix[matrix_index_i][matrix_index_j]
+        return 1 / total_distance
 
-    return 1 / total_distance
+    def _calculate_fitness(self, distance_matrix):
 
+        population_fitness = {}
+        for idx, individual in enumerate(self.population):
+            fitness = self._calculate_individual_fitness(individual, distance_matrix)
+            population_fitness[idx] = fitness
 
-def plot_pop_fitness(sorted_population_fitness, elite_number):
+        sorted_population_fitness = dict(sorted(population_fitness.items(), key=lambda item: item[1], reverse=True))
+        min_idx = list(sorted_population_fitness.keys())[0]
+        min_distance = round(1 / sorted_population_fitness[min_idx], 2)
 
-    fig, ax = plt.subplots()
-    fig.set_size_inches(16, 10)
-    for idx, fitness in enumerate(list(sorted_population_fitness.values())):
-        if idx < elite_number:
-            ax.scatter([np.random.random()], fitness, c='r')
-        else:
-            ax.scatter([np.random.random()], fitness, c='b')
-    plt.show()
+        return sorted_population_fitness, min_idx, min_distance
 
+    def _probability_selection(self, sorted_population_fitness):
 
-def calculate_fitness(population, distance_matrix):
+        probabilities = {idx: fitness / sum(sorted_population_fitness.values()) for idx, fitness in sorted_population_fitness.items()}
+        sorted_individual_idxs = list(sorted_population_fitness.keys())
 
-    population_fitness = {}
-    for idx, individual in enumerate(population):
-        fitness = _calculate_individual_fitness(individual, distance_matrix)
-        population_fitness[idx] = fitness
+        selection_idxs = []
+        for i in range(0, self.elite_number):
+            elite_id = sorted_individual_idxs[i]
+            selection_idxs.append(elite_id)
 
-    sorted_population_fitness = dict(sorted(population_fitness.items(), key=lambda item: item[1], reverse=True))
+        remaining_required = len(sorted_individual_idxs) - self.elite_number
+        tournament_selection = list(np.random.choice(sorted_individual_idxs, size=remaining_required, p=list(probabilities.values()), replace=True))
+        selection_idxs += tournament_selection
+        candidate_individuals = [self.population[idx] for idx in selection_idxs]
 
-    min_idx = list(sorted_population_fitness.keys())[0]
-    min_distance = round(1 / sorted_population_fitness[min_idx], 2)
+        return candidate_individuals
 
-    return sorted_population_fitness, min_idx, min_distance
+    def _order_crossover(self, parent_1, parent_2):
+        """Order crossover proposed by Davis"""
 
+        trimmed_parent_1, trimmed_parent_2 = parent_1[:-1], parent_2[:-1]
+        cross_a, cross_b = np.random.randint(0, len(trimmed_parent_1), size=2)
+        min_cross = min(cross_a, cross_b)
+        max_cross = max(cross_a, cross_b)
+        remains_idx = [idx for idx, _ in enumerate(trimmed_parent_1) if idx not in range(min_cross, max_cross)]
+        sub_chromosome = trimmed_parent_1[min_cross:max_cross]
 
+        # Fill the remains indices with the remains from parent 2
+        parent_2_remains = [gene for gene in trimmed_parent_2 if gene not in sub_chromosome]
+        for idx, remains_idx in enumerate(remains_idx):
+            parent_2_gene = parent_2_remains[idx]
+            if remains_idx < min_cross:
+                sub_chromosome.insert(min_cross-1, parent_2_gene)
+            else:
+                sub_chromosome.insert(max_cross+1, parent_2_gene)
 
+        sub_chromosome.append(sub_chromosome[0])
 
+        return sub_chromosome
 
-def _probability_selection(sorted_population_fitness, elite_number):
-    #plot_pop_fitness(sorted_population_fitness, elite_number)
+    def _create_new_population(self, selected_individuals):
 
-    probabilities = {idx: fitness / sum(sorted_population_fitness.values()) for idx, fitness in sorted_population_fitness.items()}
-    sorted_individual_idxs = list(sorted_population_fitness.keys())
+        children = []
+        pool_size = len(selected_individuals) - self.elite_number
+        shuffled_selected_ids = random.sample(selected_individuals, len(selected_individuals))
 
-    selection_idxs = []
-    for i in range(0, elite_number):
-        elite_id = sorted_individual_idxs[i]
-        selection_idxs.append(elite_id)
+        # Carry elites forward
+        children += selected_individuals[:self.elite_number]
 
-    remaining_required = len(sorted_individual_idxs) - elite_number
-    tournament_selection = list(np.random.choice(sorted_individual_idxs, size=remaining_required, p=list(probabilities.values()), replace=True))
+        # Create the rest of the children using crossover
+        for i in range(0, pool_size-self.elite_number):
+            parent_1, parent_2 = shuffled_selected_ids[i], shuffled_selected_ids[len(selected_individuals) - i - 1]
+            child = self._order_crossover(parent_1, parent_2)
+            children.append(child)
 
-    selection_idxs += tournament_selection
+        return children
 
-    return selection_idxs
+    def _mutate_individual(self, individual):
 
+        for _ in individual:
+            if random.random() < self.mutation_rate:
+                idx_1, idx_2 = np.random.randint(1, len(individual)-1, size=2)
+                gene_1, gene_2 = individual[idx_1], individual[idx_2]
+                individual[idx_1], individual[idx_2] = gene_2, gene_1
 
-def _get_selected_individuals(population, selection_idxs):
+        return individual
 
-    return [population[idx] for idx in selection_idxs]
+    def _mutate_population(self, new_population):
 
+        population_with_mutation = []
+        for idx, individual in enumerate(new_population):
+            if idx > self.elite_number / 2:
+                mutated_individual = self._mutate_individual(individual)
+                population_with_mutation.append(mutated_individual)
+            else:
+                population_with_mutation.append(individual)
 
-def _ox1_crossover(parent_1, parent_2):
+        return population_with_mutation
 
-    trimmed_parent_1, trimmed_parent_2 = parent_1[:-1], parent_2[:-1]
-    cross_a, cross_b = np.random.randint(0, len(trimmed_parent_1), size=2)
+    def _create_next_generation(self, distance_matrix):
 
-    min_cross = min(cross_a, cross_b)
-    max_cross = max(cross_a, cross_b)
-    remains_idx = [idx for idx, _ in enumerate(trimmed_parent_1) if idx not in range(min_cross, max_cross)]
+        sorted_population_fitness, _, _ = self._calculate_fitness(distance_matrix)
+        new_candidates = self._probability_selection(sorted_population_fitness)
+        new_population = self._create_new_population(new_candidates)
+        self.population = self._mutate_population(new_population)
 
-    # print(f"Parent 1: {parent_1}")
-    # print(f"Parent 2: {parent_2}")
-    # print(f"Trimmed parent 1: {trimmed_parent_1}")
-    # print(f"Trimmed parent 2: {trimmed_parent_2}")
-    # print(f"Min cross: {min_cross}")
-    # print(f"Max cross: {max_cross}")
-    # print(f"Remains: {remains_idx}")
+    def _save_variables(self, min_idx, min_distance):
 
-    sub_chromosome = trimmed_parent_1[min_cross:max_cross]
-    # print(f"Sub chromo: {sub_chromosome}")
+        self.min_distances.append(min_distance)
+        self.min_individuals.append(self.population[min_idx])
 
-    # Fill the remains indices with the remains from parent 2
-    parent_2_remains = [gene for gene in trimmed_parent_2 if gene not in sub_chromosome]
-    for idx, remains_idx in enumerate(remains_idx):
-        parent_2_gene = parent_2_remains[idx]
-        if remains_idx < min_cross:
-            sub_chromosome.insert(min_cross-1, parent_2_gene)
-        else:
-            sub_chromosome.insert(max_cross+1, parent_2_gene)
+    def run(self, distance_matrix):
 
-    sub_chromosome.append(sub_chromosome[0])
+        _, min_idx, min_distance = self._calculate_fitness(distance_matrix)
+        self._save_variables(min_idx, min_distance)
 
-    # print(f"Parent 2 remains: {parent_2_remains}")
-    # print(f"Final chromo: {sub_chromosome}")
+        # For each epoch, generate a new population and assess it
+        for _ in range(0, self.epochs):
+            self._create_next_generation(distance_matrix)
+            _, min_idx, min_distance = self._calculate_fitness(distance_matrix)
+            self._save_variables(min_idx, min_distance)
 
-    return sub_chromosome
+    def process_outputs(self, map_dict):
+        best_min_idx, best_min_val = min(enumerate(self.min_distances), key=operator.itemgetter(1))
+        total_improvement = 100 * (self.min_distances[0] - best_min_val) / self.min_distances[0]
+        best_individual = self.min_individuals[best_min_idx]
+        best_route = reverse_room_mapping(best_individual, map_dict)
 
+        # Create output visualisation
+        visualise_fitness(self.min_distances)
 
-def create_new_population(selected_individuals, elite_number):
-
-    children = []
-    pool_size = len(selected_individuals) - elite_number
-    shuffled_selected_ids = random.sample(selected_individuals, len(selected_individuals))
-
-    # Carry elites forward
-
-    children += selected_individuals[:elite_number]
-
-    # Create the rest of the children using crossover
-    for i in range(0, pool_size-elite_number):
-        parent_1, parent_2 = shuffled_selected_ids[i], shuffled_selected_ids[len(selected_individuals) - i - 1]
-        child = _ox1_crossover(parent_1, parent_2)
-        children.append(child)
-
-    return children
-
-
-def _mutate_individual(individual, mutation_rate):
-
-    for _ in individual:
-        if random.random() < mutation_rate:
-            idx_1, idx_2 = np.random.randint(1, len(individual)-1, size=2)
-            gene_1, gene_2 = individual[idx_1], individual[idx_2]
-            individual[idx_1], individual[idx_2] = gene_2, gene_1
-
-    return individual
-
-
-def _mutate_population(population, elite_number, mutation_rate):
-
-    population_with_mutation = []
-    for idx, individual in enumerate(population):
-        if idx > elite_number / 2:
-            mutated_individual = _mutate_individual(individual, mutation_rate)
-            population_with_mutation.append(mutated_individual)
-        else:
-            population_with_mutation.append(individual)
-
-    return population_with_mutation
-
-
-def count_same_ids(population, new_mutated_population):
-
-    count = 0
-    for i in population:
-        if i in new_mutated_population:
-            count += 1
-
-    print(f"{count} made it to the new population")
-
-
-def _create_next_generation(population, distance_matrix, elite_number, mutation_rate):
-
-    sorted_population_fitness, _, _ = calculate_fitness(population, distance_matrix)
-
-    selection_idxs = _probability_selection(sorted_population_fitness, elite_number)
-    new_candidates = _get_selected_individuals(population, selection_idxs)
-    new_population = create_new_population(new_candidates, elite_number)
-    new_mutated_population = _mutate_population(new_population, elite_number, mutation_rate)
-
-    #if population[min_idx] in new_mutated_population:
-        #print(True)
-
-    # count_same_ids(population, new_mutated_population)
-
-    return new_mutated_population
-
-
-
-
-
-
-
+        # Print some info to console
+        print(f"Shortest initial distance: {self.min_distances[0]} m")
+        print(f"Best solution found: {best_min_val:.2f} m, an improvement of {total_improvement:.2f} %")
+        print(f"The best route found is: {best_route}")
