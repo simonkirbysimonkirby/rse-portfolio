@@ -64,7 +64,7 @@ about which pairs of rooms are connected via which doorways.
 
 Please run the file `run_building_layouts.py`.
 
-# App 2: Building Navigation
+## App 2: Building Navigation
 
 ### Introduction
 
@@ -91,7 +91,7 @@ about which pairs of rooms are connected via which doorways.
 
 * `output_1`: image of shortest path between two nodes
 
-# App 3: Genetic Algorithm
+## App 3: Genetic Algorithm
 
 ### Introduction
 
