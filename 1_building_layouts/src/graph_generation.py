@@ -2,6 +2,16 @@ import networkx as nx
 
 
 def _convert_segment_to_tuples(segment):
+    """Converts a line segment to a pair of coordinate tuples, with some rounding.
+
+    Args:
+        segment (line segment object): line segment defined by two points
+
+    Returns:
+        coordinate_tuple_1 (tuple): x, y coordinate tuple pair
+        coordinate_tuple_2 (tuple): x, y coordinate tuple pair
+    """
+
     p1, p2 = segment.point(0), segment.point(1)
     coordinate_tuple_1 = (round(float(p1.x()), 3), round(float(p1.y()), 3))
     coordinate_tuple_2 = (round(float(p2.x()), 3), round(float(p2.y()), 3))
@@ -10,7 +20,18 @@ def _convert_segment_to_tuples(segment):
 
 
 def _create_network_nodes(room_name, segment_list):
-    """Get nodes with no repeats"""
+    """Creates a set of nodes, keeping track of the counts, for a single room line segment list. Checks for no repeat
+    nodes.
+
+    Args:
+        room_name (str): room name
+        segment_list (list): contains line segments for the room_name
+
+    Returns:
+        room_node_coord_dict (dict): dictionary of node coordinates
+        room_node_label_dict (dict): dictionary containing node labels
+    """
+
     room_node_coord_dict, room_node_label_dict = {}, {}
     node_count = 0
 
@@ -27,7 +48,16 @@ def _create_network_nodes(room_name, segment_list):
 
 
 def _create_network_edges(segment_list, room_node_label_dict):
-    """Create edges from segments"""
+    """Creates network edges from a segment list.
+
+    Args:
+        segment_list (list): contains line segments for the room_name
+        room_node_label_dict: (dict) dictionary containing node labels
+
+    Returns:
+        edge_list (list): list of edges, defined by tuple of two nodes (i.e. e = (u, v))
+    """
+
     edge_list = []
     for segment in segment_list:
         coordinate_tuple_1, coordinate_tuple_2 = _convert_segment_to_tuples(segment)
@@ -42,7 +72,18 @@ def _create_network_edges(segment_list, room_node_label_dict):
 
 
 def _create_single_room_network(room_name, segment_list):
-    """Create graph for single room from segment dict."""
+    """Creates a single room network of nodes and edges based on a list of line segments for that room. Some attributes
+    are set, and not used in this portfolio project. However, we will use the coordinates, node tag, and parent room
+    attributes later.
+
+    Args:
+        room_name (str): name of room
+        segment_list (list): contains line segments for the room_name
+
+    Returns:
+        G (networkx graph object): graph object for single room
+    """
+
     room_node_coord_dict, room_node_label_dict = _create_network_nodes(room_name, segment_list)
     edge_list = _create_network_edges(segment_list, room_node_label_dict)
 
@@ -65,7 +106,15 @@ def _create_single_room_network(room_name, segment_list):
 
 
 def _create_room_network_list(updated_room_segment_dict):
-    """Create graph of whole clinic. Lets create the whole clinic graph (with connecting lines) and then simplify"""
+    """Creates a list of networkx graphs for each room in the building, based on the new, cut segments for each room
+
+    Args:
+        updated_room_segment_dict (dict): contains updated room segments for each room
+
+    Returns:
+        clinic_graph_list (networkx graph object): list of graphs for each room
+    """
+
     clinic_graph_list = []
     for room_name, segment_list in updated_room_segment_dict.items():
         G = _create_single_room_network(room_name, segment_list)
@@ -75,7 +124,14 @@ def _create_room_network_list(updated_room_segment_dict):
 
 
 def _find_connecting_nodes(connecting_segment_dict):
-    """Create connecting node dict"""
+    """Creates a dictionary containing the coordinates of the connecting segments.
+
+    Args:
+        connecting_segment_dict (dict): contains the connecting line segments used to cut the straight skeletons
+
+    Returns:
+        connecting_node_dict (dict): dictionary containing the coordinates of the connecting segments
+    """
     connecting_node_dict = {}
     for room_name, segment_list in connecting_segment_dict.items():
         coordinate_tuple_1, coordinate_tuple_2 = _convert_segment_to_tuples(segment_list[0])
@@ -85,7 +141,17 @@ def _find_connecting_nodes(connecting_segment_dict):
 
 
 def create_building_network(updated_room_segment_dict, connecting_segment_dict):
-    """Merge clinic graph, add edges from connecting dict. Weird type issue, so converting to strings here."""
+    """Completes the building network by merging each sub-graph for each room together, and then adding edges between
+    the connecting node pairs. A complex, but fully connected network is returned.
+
+    Args:
+        updated_room_segment_dict (dict): contains updated/cut room segments
+        connecting_segment_dict (dict): contains the connecting line segments used to cut the straight skeletons
+
+    Returns:
+        G (networkx graph object): fully connecting graph of building
+    """
+
     clinic_graph_list = _create_room_network_list(updated_room_segment_dict)
     G = nx.compose_all(clinic_graph_list)
     connecting_node_dict = _find_connecting_nodes(connecting_segment_dict)

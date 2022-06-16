@@ -19,7 +19,7 @@ def main():
 
     # Create network from line segments
     complex_G = create_building_network(updated_room_segment_dict, connecting_segment_dict)
-    plot_clinic_network(complex_G, polygon_dict)
+    plot_clinic_network(complex_G, polygon_dict, True, 'output_4_complex')
 
     # Simplify network using a three-stage routine
     simplified_G = run_trim_sequence(complex_G, polygon_dict, plot_bool=True)
@@ -28,7 +28,7 @@ def main():
     final_G = final_graph_processing(simplified_G)
 
     # Save final simplified and relabelled network
-    save_graph(final_G, "final_building_network.pickle")
+    save_graph(final_G, "output_7_final_building_network.pickle")
 
 
 if __name__ == "__main__":
