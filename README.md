@@ -2,9 +2,9 @@
 
 June 2022, Simon Kirby
 
-This repository contains two small pieces of work relating to research I am currently conducting with Prof. Christmas. 
-Two small apps are included, both in a functional style, showing a wide range of techniques, from low-level manipulation 
-of geometric primitives, to the creation of engaging visualisations. Please enjoy!
+This repository contains three small pieces of work relating to research I am currently conducting with Prof. Christmas. 
+Three apps are included, two in a functional style, and one object-orientated, showing a wide range of techniques, from low-level manipulation 
+of geometric primitives, to the creation of engaging visualisations, to optimisation with a genetic algorithm. Please enjoy!
 
 # Dependencies
 
@@ -75,6 +75,30 @@ The following routine is performed:
 * Selects two random nodes from different rooms
 * Finds the shortest path between these nodes (by distance/edge weight)
 * Plots the shortest path on a visualisation of the floor plan
+
+### How to run
+
+Please run the file `run_building_navigation.py`. Run this multiple times to generate different routes!
+
+### Input & Outputs
+
+**Inputs**:
+* `room_polygons.pickle`: a pickled dictionary of polygons, each representing a room in a building.
+* ` building_doorways.pickle`: a pickled dictionary of doorway coordinates and metadata, in particular, information 
+about which pairs of rooms are connected via which doorways.
+  
+**Outputs**:
+
+* `output_1`: image of shortest path between two nodes
+
+# App 3: Genetic Algorithm
+
+### Introduction
+
+The third app takes the building graph produced in app 1, and the shortest path routing abilities shown in app 2, and optimises a travelling salesperson problem (i.e. what is the shortest distance a person visitng n rooms can take, visiting each room once). This app has been written in a class-based style, simplifying the user entry point significantly. 
+
+The following routine is performed:
+* A distance matrix between every room and every other room is created.
 
 ### How to run
 
