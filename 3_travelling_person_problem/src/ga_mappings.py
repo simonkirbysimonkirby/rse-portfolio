@@ -53,9 +53,14 @@ def create_mapping(room_list):
     for idx, room in enumerate(room_list):
         start = ord('a')
         room_label = chr(start + idx)
-        map_dict[idx] = room_label
+        map_dict[room_label] = room
 
     return map_dict
+
+
+def reverse_room_mapping(individual, map_dict):
+
+    return [map_dict[letter] for letter in individual]
 
 
 
