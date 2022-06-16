@@ -79,7 +79,7 @@ The following routine is performed:
 
 ### How to run
 
-Please run the file `run_building_navigation.py`.
+Please run the file `run_building_navigation.py`. Run this multiple times to generate different routes!
 
 ### Input & Outputs
 
@@ -89,6 +89,8 @@ Please run the file `run_building_navigation.py`.
 about which pairs of rooms are connected via which doorways.
   
 **Outputs**:
+
+* `output_1`: image of shortest path between two nodes
 
 
 

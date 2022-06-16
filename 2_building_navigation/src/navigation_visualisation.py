@@ -4,9 +4,20 @@ from descartes import PolygonPatch
 import networkx as nx
 
 def visualise_shortest_path(G, polygon_dict, shortest_path, shortest_path_length):
+    """Plots a building network with each node fixed at its coordinate location on the building floor plan. For the
+    given shortest path, node colors are changed. Finally, the path length is indicated too.
+
+    Args:
+        G (networkx graph object): graph of building
+        polygon_dict (dict): dictionary of polygons for each room
+        shortest_path (list): list of shortest path between two nodes
+        shortest_path_length (float): distance travelled along shortest path
+
+    Returns:
+        None
+    """
 
     node_1, node_2 = shortest_path[0], shortest_path[-1]
-
     G_pos = {node_key: data['coords'] for node_key, data in G.nodes(data=True)}
 
     node_cmap = []
@@ -56,4 +67,5 @@ def visualise_shortest_path(G, polygon_dict, shortest_path, shortest_path_length
         handles.append(patch)
 
     plt.legend(handles=handles, frameon=False, ncol=2, labelspacing=1, loc="lower center")
+    plt.savefig(f"output/output_1_shortest_path_between_nodes.png")
     plt.show()
