@@ -9,4 +9,5 @@ def visualise_fitness(min_distances):
     plt.ylabel('Distance travelled by nurse, m')
     plt.xlabel('Epoch')
     plt.title("Improvement of distance travelled over epochs")
+    plt.savefig("output/output_1_optimisation_of_travelling_person_problem.png")
     plt.show()
