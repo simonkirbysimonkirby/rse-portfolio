@@ -144,7 +144,10 @@ class GeneticAlgorithm:
         return candidate_individuals
 
     def _order_crossover(self, parent_1, parent_2):
-        """Creates a child from two parents, based on ordered crossover.
+        """Creates a child from two parents, based on ordered crossover. Two points are randomly generated,
+        a sub-chromosome copied and kept in place from parent_1, and the remaining gaps filled with the
+        remaining genes from parent_2. This ensures that no repeat genes occur. To finish, the start room
+        is copied, to ensure that the nurse starts and ends in the same place.
 
         Args:
             parent_1 (list): an individual containing a list of characters representing a route
@@ -175,24 +178,40 @@ class GeneticAlgorithm:
 
         return child
 
-    def _create_new_population(self, selected_individuals):
+    def _create_new_population(self, candidates):
+        """Creates a new population, using elitism and crossover.
+
+        Args:
+            candidates (list): list of candidate individuals to make a population from
+
+        Returns:
+            children (list): a new population
+        """
 
         children = []
-        pool_size = len(selected_individuals) - self.elite_number
-        shuffled_selected_ids = random.sample(selected_individuals, len(selected_individuals))
+        pool_size = len(candidates) - self.elite_number
+        shuffled_selected_ids = random.sample(candidates, len(candidates))
 
         # Carry elites forward
-        children += selected_individuals[:self.elite_number]
+        children += candidates[:self.elite_number]
 
         # Create the rest of the children using crossover
         for i in range(0, pool_size-self.elite_number):
-            parent_1, parent_2 = shuffled_selected_ids[i], shuffled_selected_ids[len(selected_individuals) - i - 1]
+            parent_1, parent_2 = shuffled_selected_ids[i], shuffled_selected_ids[len(candidates) - i - 1]
             child = self._order_crossover(parent_1, parent_2)
             children.append(child)
 
         return children
 
     def _mutate_individual(self, individual):
+        """Mutates each individual based on a mutation rate, by swapping rooms.
+
+        Args:
+            individual (list): a non-mutated individual
+
+        Returns:
+            individual (list): a potentially mutated individual
+        """
 
         for _ in individual:
             if random.random() < self.mutation_rate:
@@ -203,6 +222,15 @@ class GeneticAlgorithm:
         return individual
 
     def _mutate_population(self, new_population):
+        """Mutates each individual in a population. We mutate ~half the elites as well, to add slightly more variation
+        to the new population.
+
+        Args:
+            new_population (list): a list of individuals
+
+        Returns:
+            population_with_mutation (list): a mutated population
+        """
 
         population_with_mutation = []
         for idx, individual in enumerate(new_population):
@@ -215,6 +243,16 @@ class GeneticAlgorithm:
         return population_with_mutation
 
     def _create_next_generation(self, distance_matrix):
+        """Create the next generation population by running a routine. The class population attribute is updated. The
+        new population is created by assessing the fitness of the current population, creating a new candidate pool
+        using elitism and probability selection, and finally mutating the candidate pool to create a new population.
+
+        Args:
+            distance_matrix (numpy ndarray): matrix of distances between rooms
+
+        Returns:
+            None
+        """
 
         sorted_population_fitness, _, _ = self._calculate_fitness(distance_matrix)
         new_candidates = self._probability_selection(sorted_population_fitness)
@@ -222,11 +260,31 @@ class GeneticAlgorithm:
         self.population = self._mutate_population(new_population)
 
     def _save_variables(self, min_idx, min_distance):
+        """Saves the min index and distance of the best individual in the population each epoch to the data stores
+        in the class attributes.
+
+        Args:
+            min_idx (int): index of the best individual in the population
+            min_distance (float): the minimum distance travelled along a route by the best candidate
+
+        Returns:
+            None
+        """
 
         self.min_distances.append(min_distance)
         self.min_individuals.append(self.population[min_idx])
 
     def run(self, distance_matrix):
+        """Runs the genetic algorithm to optimise for distance travelled. Each epoch, the fitnesses of the population
+        are assessed, the best individuals found, and a new population created. Data is saved each epoch for parsing
+        later.
+
+        Args:
+            distance_matrix (numpy ndarray): matrix of distances between each room and each other room
+
+        Returns:
+            None
+        """
 
         _, min_idx, min_distance = self._calculate_fitness(distance_matrix)
         self._save_variables(min_idx, min_distance)
@@ -238,6 +296,16 @@ class GeneticAlgorithm:
             self._save_variables(min_idx, min_distance)
 
     def process_outputs(self, map_dict):
+        """Method to process the outputs, create a visualisation, and print some results to console. The best
+        individual across epochs is found, and the corresponding route is printed. In the future, a visualisation
+        of the route will be created.
+
+        Args:
+            map_dict (dict): mapping dictionary of alphabetical character to room name
+
+        Returns:
+            None
+        """
         best_min_idx, best_min_val = min(enumerate(self.min_distances), key=operator.itemgetter(1))
         total_improvement = 100 * (self.min_distances[0] - best_min_val) / self.min_distances[0]
         best_individual = self.min_individuals[best_min_idx]
