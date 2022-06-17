@@ -2,6 +2,14 @@ import matplotlib.pyplot as plt
 
 
 def visualise_fitness(min_distances):
+    """Creates simple plot showing the optimisation improvement across epochs
+
+    Args:
+        min_distances (list): list of the minimum distances travelled (best sequences identified) per epoch
+
+    Returns:
+        None
+    """
 
     fig, ax = plt.subplots()
     fig.set_size_inches(16, 10)

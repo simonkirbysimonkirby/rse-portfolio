@@ -8,8 +8,36 @@ from tsp_visualisation import visualise_fitness
 
 
 class GeneticAlgorithm:
+    """Class to control the genetic algorithm (GA) optimisation of a travelling person problem, applied to
+    a given building layout. Most methods are internal to simplify the entry point for the user. The class
+    based structure allows the storing of variables in the GA class object, which allows for simple updates
+    of populations etc, but does require a more complex initialisation.
+
+    The GA operates in a fairly standard way, using order crossover to generate children, mutation to add
+    variation, and elitism to ensure the strongest individuals progress through epochs.
+
+    There are a couple of problem-specific adjustments: the nurse must start and end at the same point
+    (in the spirit of the original tsp problem), and the nurse does not have to visit any room more than
+    once in their round (mutation swaps genes, ensuring this).
+    """
 
     def __init__(self, route_length, epochs, population_size, elite_number, mutation_rate, map_dict):
+        """The initialisation of the GA occurs here. In particular, the first population is generated, and
+        stored in self.population. A future version of this class could utilise dataclasses to reduce
+        boilerplate.
+
+        A population contains n individuals, each a list of l alphabetical characters representing room
+        names. The individual length is problem specific, and equal to the route_length parameter.
+
+        Args:
+            route_length (int): number of rooms that must be visited by the nurse/person. Sets the
+            individual length.
+            epochs (int): number of generations that the GA runs for in the optimisation
+            population_size (int): number of individuals in the population
+            elite_number (int): number of elites that carry through to the next epoch population
+            mutation_rate (float): percentage chance of mutation (a gene swap), i.e. 5% -> 0.05
+            map_dict (dict): dictionary containing room name and character representation mapping
+        """
 
         self.epochs = epochs
         self.population_size = population_size
@@ -20,6 +48,18 @@ class GeneticAlgorithm:
         self.population = [self._create_route(route_length, map_dict) for _ in range(0, self.population_size)]
 
     def _create_route(self, route_length, map_dict):
+        """Method to create a route of alphabetical characters, related to their respective room names,
+        of the correct route length.
+
+        Args:
+            route_length (int): number of rooms that must be visited by the nurse/person. Sets the
+            individual length.
+            map_dict (dict): dictionary containing room name and character representation mapping
+
+        Returns:
+            route (list): list of alphabetical characters representing a route of room names
+        """
+
         possible_rooms = list(map_dict.keys())
         route_rooms = possible_rooms[:route_length]
         route = random.sample(route_rooms, route_length - 1)
@@ -28,6 +68,21 @@ class GeneticAlgorithm:
         return route
 
     def _calculate_individual_fitness(self, individual, distance_matrix):
+        """Method to calculate the fitness of an individual. This is 1 / the total distance travelled in the
+        route, as we want to maximise fitness and minimise distance.
+
+        For a route of a -> b -> c, the distance matrix is polled for a -> b: matrix[1][2], and then
+        matrix[2][3], returning two distances. These would be summed, and then inverted, to get the
+        fitness of the route/individual.
+
+        Args:
+            individual (list): list of characters representing a route
+            distance_matrix (numpy ndarray): distance matrix of each room to each other room
+
+        Returns:
+            fitness (float): 1 / total distance travelled in the individuals route
+        """
+
         total_distance = 0
         for idx, label in enumerate(individual[:-1]):
             matrix_index_i = ord(label) - ord('a')
@@ -37,6 +92,16 @@ class GeneticAlgorithm:
         return 1 / total_distance
 
     def _calculate_fitness(self, distance_matrix):
+        """Method to assess the fitness of every individual in the population, returning sorted values.
+
+        Args:
+            distance_matrix (numpy ndarray): distance matrix of each room to each other room
+
+        Returns:
+            sorted_population_fitness (dict): dictionary containing sorted index and fitness
+            min_idx (int): index of the best individual
+            min_distance (float): min distance travelled by the best individual
+        """
 
         population_fitness = {}
         for idx, individual in enumerate(self.population):
@@ -50,6 +115,18 @@ class GeneticAlgorithm:
         return sorted_population_fitness, min_idx, min_distance
 
     def _probability_selection(self, sorted_population_fitness):
+        """Creates a list of candidates using elitism, and then selection via probabilities based on
+        fitness. For the elitism stage, the top n individuals are transferred to the candidate population.
+
+        For the remaining candidates, probabilities for each individual are created, and then individuals
+        are drawn from a bucket based on these probabilities.
+
+        Args:
+            sorted_population_fitness (dict): dictionary containing sorted index and fitness
+
+        Returns:
+            candidate_individuals (list): list of potential candidates to make the next population from
+        """
 
         probabilities = {idx: fitness / sum(sorted_population_fitness.values()) for idx, fitness in sorted_population_fitness.items()}
         sorted_individual_idxs = list(sorted_population_fitness.keys())
@@ -67,7 +144,15 @@ class GeneticAlgorithm:
         return candidate_individuals
 
     def _order_crossover(self, parent_1, parent_2):
-        """Order crossover proposed by Davis"""
+        """Creates a child from two parents, based on ordered crossover.
+
+        Args:
+            parent_1 (list): an individual containing a list of characters representing a route
+            parent_2 (list): an individual containing a list of characters representing a route
+
+        Returns:
+            child (list): an individual containing a list of characters representing a route
+        """
 
         trimmed_parent_1, trimmed_parent_2 = parent_1[:-1], parent_2[:-1]
         cross_a, cross_b = np.random.randint(0, len(trimmed_parent_1), size=2)
@@ -86,8 +171,9 @@ class GeneticAlgorithm:
                 sub_chromosome.insert(max_cross+1, parent_2_gene)
 
         sub_chromosome.append(sub_chromosome[0])
+        child = sub_chromosome
 
-        return sub_chromosome
+        return child
 
     def _create_new_population(self, selected_individuals):
 
