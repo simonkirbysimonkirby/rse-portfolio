@@ -45,7 +45,7 @@ class GeneticAlgorithm:
         self.mutation_rate = mutation_rate
         self.min_distances = []
         self.min_individuals = []
-        self.population = [self._create_route(route_length, map_dict) for _ in range(0, self.population_size)]
+        self.population = self._create_random_population(route_length, map_dict)
 
     def _create_route(self, route_length, map_dict):
         """Method to create a route of alphabetical characters, related to their respective room names,
@@ -66,6 +66,20 @@ class GeneticAlgorithm:
         route.append(route[0])
 
         return route
+
+
+    def _create_random_population(self, route_length, map_dict):
+        """Method to create a random population of the correct population size
+
+        Args:
+            route_length
+            map_dict (dict): dictionary containing room name and character representation mapping
+
+        Returns:
+            population (list): list of individuals (i.e. routes)
+        """
+
+        return [self._create_route(route_length, map_dict) for _ in range(0, self.population_size)]
 
     def _calculate_individual_fitness(self, individual, distance_matrix):
         """Method to calculate the fitness of an individual. This is 1 / the total distance travelled in the
@@ -137,7 +151,7 @@ class GeneticAlgorithm:
             selection_idxs.append(elite_id)
 
         remaining_required = len(sorted_individual_idxs) - self.elite_number
-        tournament_selection = list(np.random.choice(sorted_individual_idxs, size=remaining_required, p=list(probabilities.values()), replace=True))
+        tournament_selection = list(np.random.choice(sorted_individual_idxs, size=remaining_required, p=list(probabilities.values()), replace=False))
         selection_idxs += tournament_selection
         candidate_individuals = [self.population[idx] for idx in selection_idxs]
 
@@ -242,22 +256,30 @@ class GeneticAlgorithm:
 
         return population_with_mutation
 
-    def _create_next_generation(self, distance_matrix):
+    def _create_next_generation(self, distance_matrix, random_bool, route_length, map_dict):
         """Create the next generation population by running a routine. The class population attribute is updated. The
         new population is created by assessing the fitness of the current population, creating a new candidate pool
         using elitism and probability selection, and finally mutating the candidate pool to create a new population.
 
         Args:
             distance_matrix (numpy ndarray): matrix of distances between rooms
+            random_bool (bool): if True, population is selected randomly
+            route_length (int): number of rooms that must be visited by the nurse/person. Sets the
+            individual length.
+            map_dict (dict): dictionary containing room name and character representation mapping
 
         Returns:
             None
         """
 
-        sorted_population_fitness, _, _ = self._calculate_fitness(distance_matrix)
-        new_candidates = self._probability_selection(sorted_population_fitness)
-        new_population = self._create_new_population(new_candidates)
-        self.population = self._mutate_population(new_population)
+        if random_bool:
+            self.population = self._create_random_population(route_length, map_dict)
+
+        else:
+            sorted_population_fitness, _, _ = self._calculate_fitness(distance_matrix)
+            new_candidates = self._probability_selection(sorted_population_fitness)
+            new_population = self._create_new_population(new_candidates)
+            self.population = self._mutate_population(new_population)
 
     def _save_variables(self, min_idx, min_distance):
         """Saves the min index and distance of the best individual in the population each epoch to the data stores
@@ -274,13 +296,17 @@ class GeneticAlgorithm:
         self.min_distances.append(min_distance)
         self.min_individuals.append(self.population[min_idx])
 
-    def run(self, distance_matrix):
+    def run(self, distance_matrix, route_length, map_dict, random_bool):
         """Runs the genetic algorithm to optimise for distance travelled. Each epoch, the fitnesses of the population
         are assessed, the best individuals found, and a new population created. Data is saved each epoch for parsing
         later.
 
         Args:
             distance_matrix (numpy ndarray): matrix of distances between each room and each other room
+            route_length (int): number of rooms that must be visited by the nurse/person. Sets the
+            individual length.
+            map_dict (dict): dictionary containing room name and character representation mapping
+            random_bool (bool): if True, population is selected randomly
 
         Returns:
             None
@@ -291,7 +317,7 @@ class GeneticAlgorithm:
 
         # For each epoch, generate a new population and assess it
         for _ in range(0, self.epochs):
-            self._create_next_generation(distance_matrix)
+            self._create_next_generation(distance_matrix, random_bool, route_length, map_dict)
             _, min_idx, min_distance = self._calculate_fitness(distance_matrix)
             self._save_variables(min_idx, min_distance)
 
